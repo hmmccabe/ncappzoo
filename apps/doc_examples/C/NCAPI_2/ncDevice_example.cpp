@@ -7,7 +7,7 @@ int main(int argc, char** argv)
         ncStatus_t retCode;
         struct ncDeviceHandle_t* deviceHandlePtr;
         
-        // Initialize the device
+        // Initialize the device handle
         retCode = ncDeviceInit(0, &deviceHandlePtr);
         if (retCode != NC_OK)
         {
