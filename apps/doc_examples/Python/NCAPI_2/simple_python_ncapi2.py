@@ -31,7 +31,7 @@ device_list = mvncapi.enumerate_devices()
 device = mvncapi.Device(device_list[0])
 device.open()
 
-# Initialize a graph from file at some GRAPH_FILEPATH
+# Read a graph from file at some GRAPH_FILEPATH and initialize the Graph
 GRAPH_FILEPATH = './graph'
 with open(GRAPH_FILEPATH, mode='rb') as f:
     graph_buffer = f.read()
