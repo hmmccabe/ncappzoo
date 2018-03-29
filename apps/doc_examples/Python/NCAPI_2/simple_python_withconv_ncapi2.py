@@ -4,24 +4,27 @@ from mvnc import mvncapi
 import cv2
 import numpy as np
 
+
 def get_image():
     ilsvrc_mean = np.load('ilsvrc_2012_mean.npy').mean(1).mean(1)
-    dim=(224,224)
+    dim = (224, 224)
     input_tensor = cv2.imread('cat.jpg')
     input_tensor = cv2.resize(input_tensor, dim)
     input_tensor = input_tensor.astype(np.float32)
-    input_tensor[:,:,0] = (input_tensor[:,:,0] - ilsvrc_mean[0])
-    input_tensor[:,:,1] = (input_tensor[:,:,1] - ilsvrc_mean[1])
-    input_tensor[:,:,2] = (input_tensor[:,:,2] - ilsvrc_mean[2])
+    input_tensor[:, :, 0] = (input_tensor[:, :, 0] - ilsvrc_mean[0])
+    input_tensor[:, :, 1] = (input_tensor[:, :, 1] - ilsvrc_mean[1])
+    input_tensor[:, :, 2] = (input_tensor[:, :, 2] - ilsvrc_mean[2])
     return input_tensor
+
 
 def do_something(results):
     labels = np.loadtxt('synset_words.txt', str, delimiter='\t')
-    order = output.argsort()[::-1][:6]
+    order = results.argsort()[::-1][:6]
     print('\n------- predictions --------')
     for i in range(0,5):
-        print ('prediction ' + str(i) + ' (probability ' + str(output[order[i]]) 
+        print ('prediction ' + str(i) + ' (probability ' + str(results[order[i]])
                + ') is ' + labels[order[i]] + '  label index is: ' + str(order[i]))
+
 
 # Initialize and open a device
 device_list = mvncapi.enumerate_devices()
@@ -31,17 +34,17 @@ device.open()
 # Initialize a graph from file at some GRAPH_FILEPATH
 GRAPH_FILEPATH = './graph'
 with open(GRAPH_FILEPATH, mode='rb') as f:
-	graph_buffer = f.read()
-graph = device.graph_init('my graph')
+    graph_buffer = f.read()
+graph = mvncapi.Graph('my graph')
 
 # CONVENIENCE FUNCTION: Allocate the graph to the device and create input/output Fifos in one call
 # Here we are leaving default values for FifoType and the number of elements, but setting the data types to FP32
 input_fifo, output_fifo = device.graph_allocate_with_fifos(graph, graph_buffer,
-        input_fifo_data_type=mvncapi.FifoDataType.FP32,
-        output_fifo_data_type=mvncapi.FifoDataType.FP32)
+                                                           input_fifo_data_type=mvncapi.FifoDataType.FP32,
+                                                           output_fifo_data_type=mvncapi.FifoDataType.FP32)
 
 # Get graph TensorDescriptor struct for input (describes expected graph input)
-input_desc = graph.get_option(mvncapi.GraphOptionClass0.INPUT_TENSOR_DESCRIPTORS)
+input_desc = graph.get_option(mvncapi.GraphOption.RO_INPUT_TENSOR_DESCRIPTORS)
 
 # Read and pre-process input
 input_tensor = get_image()
