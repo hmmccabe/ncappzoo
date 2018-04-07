@@ -6,24 +6,17 @@ import numpy as np
 
 
 def get_image():
-    ilsvrc_mean = np.load('ilsvrc_2012_mean.npy').mean(1).mean(1)
     dim = (224, 224)
     tensor = cv2.imread('cat.jpg')
     tensor = cv2.resize(tensor, dim)
     tensor = tensor.astype(np.float32)
-    tensor[:, :, 0] = (tensor[:, :, 0] - ilsvrc_mean[0])
-    tensor[:, :, 1] = (tensor[:, :, 1] - ilsvrc_mean[1])
-    tensor[:, :, 2] = (tensor[:, :, 2] - ilsvrc_mean[2])
     return tensor
 
 
 def do_something(results):
     labels = np.loadtxt('synset_words.txt', str, delimiter='\t')
     order = results.argsort()[::-1][:6]
-    print('\n------- predictions --------')
-    for i in range(0, 5):
-        print('prediction ' + str(i) + ' (probability ' + str(results[order[i]])
-              + ') is ' + labels[order[i]] + '  label index is: ' + str(order[i]))
+    print('top prediction (probability ' + str(results[order[0]]) + ') is ' + labels[order[0]])
 
 
 # Initialize and open a device
@@ -59,7 +52,8 @@ output, user_obj = output_fifo.read_elem()
 do_something(output)
 
 # Clean up
-input_fifo.delete()
-output_fifo.delete()
-graph.deallocate()
+input_fifo.destroy()
+output_fifo.destroy()
+graph.destroy()
 device.close()
+device.destroy()
