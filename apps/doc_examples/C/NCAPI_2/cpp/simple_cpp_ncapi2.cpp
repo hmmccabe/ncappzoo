@@ -95,8 +95,6 @@ int main() {
     // Initialize and open a device
     struct ncDeviceHandle_t* deviceHandle;
     retCode = ncDeviceCreate(0, &deviceHandle);
-    unsigned int* deviceState;
-    unsigned int stateLength;
     retCode = ncDeviceOpen(deviceHandle);
 
     // Load a graph from file at some GRAPH_FILEPATH
