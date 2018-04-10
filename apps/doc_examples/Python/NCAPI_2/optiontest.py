@@ -5,10 +5,18 @@ import numpy as np
 # Turn off logging except for fatal to hide INVALID_DATA_LENGTH messages
 mvncapi.global_set_option(mvncapi.GlobalOption.RW_LOG_LEVEL, 4)
 
+print('\n\n----- Global Options -----')
+for name, member in mvncapi.GlobalOption.__members__.items():
+    try:
+        optval = mvncapi.global_get_option(member)
+        print(name, type(optval), optval)
+    except Exception as e:
+        print(e, name)
+
 # Initialize and open a device
 device_list = mvncapi.enumerate_devices()
 device = mvncapi.Device(device_list[0])
-print('Device created, state is', device.get_option(mvncapi.DeviceOption.RO_DEVICE_STATE))
+print('\n\nDevice created, state is', device.get_option(mvncapi.DeviceOption.RO_DEVICE_STATE))
 device.open()
 print('Device opened, state is', device.get_option(mvncapi.DeviceOption.RO_DEVICE_STATE))
 
@@ -32,7 +40,6 @@ print('Graph created, state is', graph.get_option(mvncapi.GraphOption.RO_GRAPH_S
 device.graph_allocate(graph, graph_buffer)
 print('Graph allocated, state is', graph.get_option(mvncapi.GraphOption.RO_GRAPH_STATE))
 
-# Get GraphOptions and display
 print('\n\n----- Graph Options -----')
 for name, member in mvncapi.GraphOption.__members__.items():
     try:

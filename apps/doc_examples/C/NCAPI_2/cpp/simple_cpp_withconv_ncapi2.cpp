@@ -5,13 +5,13 @@
 #include <stdlib.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../include/stb_image.h"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include "stb_image_resize.h"
+#include "../include/stb_image_resize.h"
 
 // Network config
-#define GRAPH_FILEPATH "graph"
+#define GRAPH_FILEPATH "../misc/graph"
 const int networkDim = 224;
 float networkMean[] = {0.40787054*255.0, 0.45752458*255.0, 0.48109378*255.0};
 
@@ -94,7 +94,7 @@ int main() {
 
     // Initialize and open a device
     struct ncDeviceHandle_t* deviceHandle;
-    retCode = ncDeviceInit(0, &deviceHandle);
+    retCode = ncDeviceCreate(0, &deviceHandle);
     retCode = ncDeviceOpen(deviceHandle);
 
     // Load a graph from file at some GRAPH_FILEPATH
@@ -103,7 +103,7 @@ int main() {
     
     // Initialize the graph
     struct ncGraphHandle_t* graphHandle;
-    retCode = ncGraphInit("my graph", &graphHandle);
+    retCode = ncGraphCreate("my graph", &graphHandle);
     
     // CONVENIENCE FUNCTION: Allocate the graph to the device and create input/output FIFOs with explicit FIFO options
     struct ncFifoHandle_t* inputFIFO;
@@ -124,7 +124,7 @@ int main() {
     ncGraphGetOption(graphHandle, NC_RO_GRAPH_OUTPUT_TENSOR_DESCRIPTORS, &outputDescriptor, &length);
 
     // Read and preprocess input
-    float* imageBuffer = loadImageFromFile("cat.jpg", networkDim, networkMean);
+    float* imageBuffer = loadImageFromFile("../misc/cat.jpg", networkDim, networkMean);
     unsigned int imageBufferLength = 3 * networkDim * networkDim * sizeof(*imageBuffer);
 
     // Write the image to the input FIFO
@@ -157,12 +157,13 @@ int main() {
     printf("Probability of top result is: %f\n", fresult[maxIndex]);
 
     // Clean up
-    retCode = ncFifoDelete(inputFIFO);
+    retCode = ncFifoDestroy(inputFIFO);
     inputFIFO = NULL;
-    retCode = ncFifoDelete(outputFIFO);
+    retCode = ncFifoDestroy(outputFIFO);
     outputFIFO = NULL;
-    retCode = ncGraphDeallocate(graphHandle);
+    retCode = ncGraphDestroy(graphHandle);
     graphHandle = NULL;
     retCode = ncDeviceClose(deviceHandle);
+    retCode = ncDeviceDestroy(deviceHandle);
     deviceHandle = NULL;
 }

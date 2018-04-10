@@ -5,13 +5,13 @@
 #include <stdlib.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../include/stb_image.h"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include "stb_image_resize.h"
+#include "../include/stb_image_resize.h"
 
 // Network config
-#define GRAPH_FILEPATH "graph"
+#define GRAPH_FILEPATH "../misc/graph"
 const int networkDim = 224;
 float networkMean[] = {0.40787054*255.0, 0.45752458*255.0, 0.48109378*255.0};
 
@@ -94,7 +94,9 @@ int main() {
 
     // Initialize and open a device
     struct ncDeviceHandle_t* deviceHandle;
-    retCode = ncDeviceInit(0, &deviceHandle);
+    retCode = ncDeviceCreate(0, &deviceHandle);
+    unsigned int* deviceState;
+    unsigned int stateLength;
     retCode = ncDeviceOpen(deviceHandle);
 
     // Load a graph from file at some GRAPH_FILEPATH
@@ -103,13 +105,13 @@ int main() {
 
     // Initialize and allocate the graph to the device
     struct ncGraphHandle_t* graphHandle;
-    retCode = ncGraphInit("my graph", &graphHandle);
+    retCode = ncGraphCreate("my graph", &graphHandle);
     retCode = ncGraphAllocate(deviceHandle, graphHandle, graphBuffer, graphBufferLength);
     free(graphBuffer);
     
     // Get the graph TensorDescriptor structs (they describe expected graph input/output)
-    struct ncTensorDescriptor_t *inputDescriptor;
-    struct ncTensorDescriptor_t *outputDescriptor;
+    struct ncTensorDescriptor_t* inputDescriptor; 
+    struct ncTensorDescriptor_t* outputDescriptor; 
     unsigned int length;
     ncGraphGetOption(graphHandle, NC_RO_GRAPH_INPUT_TENSOR_DESCRIPTORS, &inputDescriptor, &length);
     ncGraphGetOption(graphHandle, NC_RO_GRAPH_OUTPUT_TENSOR_DESCRIPTORS, &outputDescriptor, &length);
@@ -118,15 +120,15 @@ int main() {
     struct ncFifoHandle_t* inputFIFO;
     struct ncFifoHandle_t* outputFIFO;
     int datatype = NC_FIFO_FP32;
-    retCode = ncFifoInit(NC_FIFO_HOST_WO, &inputFIFO);
-    retCode = ncFifoInit(NC_FIFO_HOST_RO, &outputFIFO);
+    retCode = ncFifoCreate("", NC_FIFO_HOST_WO, &inputFIFO);
+    retCode = ncFifoCreate("", NC_FIFO_HOST_RO, &outputFIFO);
     retCode = ncFifoSetOption(inputFIFO, NC_RW_FIFO_DATA_TYPE, &datatype, sizeof(datatype)); // optional, if needed
     retCode = ncFifoSetOption(outputFIFO, NC_RW_FIFO_DATA_TYPE, &datatype, sizeof(datatype)); // optional, if needed
-    retCode = ncFifoCreate(inputFIFO, deviceHandle, inputDescriptor, 2);
-    retCode = ncFifoCreate(outputFIFO, deviceHandle, outputDescriptor, 2);
+    retCode = ncFifoAllocate(inputFIFO, deviceHandle, inputDescriptor, 2);
+    retCode = ncFifoAllocate(outputFIFO, deviceHandle, outputDescriptor, 2);
 
     // Read and preprocess input
-    float* imageBuffer = loadImageFromFile("cat.jpg", networkDim, networkMean);
+    float* imageBuffer = loadImageFromFile("../misc/cat.jpg", networkDim, networkMean);
     unsigned int imageBufferLength = 3 * networkDim * networkDim * sizeof(*imageBuffer);
 
     // Write the image to the input FIFO
@@ -159,12 +161,14 @@ int main() {
     printf("Probability of top result is: %f\n", fresult[maxIndex]);
 
     // Clean up
-    retCode = ncFifoDelete(inputFIFO);
+    retCode = ncFifoDestroy(inputFIFO);
     inputFIFO = NULL;
-    retCode = ncFifoDelete(outputFIFO);
+    retCode = ncFifoDestroy(outputFIFO);
     outputFIFO = NULL;
-    retCode = ncGraphDeallocate(graphHandle);
+    retCode = ncGraphDestroy(graphHandle);
     graphHandle = NULL;
     retCode = ncDeviceClose(deviceHandle);
+    retCode = ncDeviceDestroy(deviceHandle);
     deviceHandle = NULL;
+
 }
