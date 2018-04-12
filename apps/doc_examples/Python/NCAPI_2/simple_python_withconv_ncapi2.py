@@ -6,10 +6,14 @@ import numpy as np
 
 
 def get_image():
+    ilsvrc_mean = np.load('ilsvrc_2012_mean.npy').mean(1).mean(1)
     dim = (224, 224)
     tensor = cv2.imread('cat.jpg')
     tensor = cv2.resize(tensor, dim)
     tensor = tensor.astype(np.float32)
+    tensor[:, :, 0] = (tensor[:, :, 0] - ilsvrc_mean[0])
+    tensor[:, :, 1] = (tensor[:, :, 1] - ilsvrc_mean[1])
+    tensor[:, :, 2] = (tensor[:, :, 2] - ilsvrc_mean[2])
     return tensor
 
 

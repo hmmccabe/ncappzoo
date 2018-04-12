@@ -6,10 +6,14 @@ import numpy as np
 
 
 def get_image():
+    ilsvrc_mean = np.load('ilsvrc_2012_mean.npy').mean(1).mean(1)
     dim = (224, 224)
     tensor = cv2.imread('cat.jpg')
     tensor = cv2.resize(tensor, dim)
     tensor = tensor.astype(np.float32)
+    tensor[:, :, 0] = (tensor[:, :, 0] - ilsvrc_mean[0])
+    tensor[:, :, 1] = (tensor[:, :, 1] - ilsvrc_mean[1])
+    tensor[:, :, 2] = (tensor[:, :, 2] - ilsvrc_mean[2])
     return tensor
 
 
@@ -52,7 +56,7 @@ input_tensor = get_image()
 input_fifo.write_elem(input_tensor, input_descriptor, 'user object')
 
 # Queue the inference
-graph.queue_inference(input_fifo, output_fifo)
+graph.queue_inference(input_fifo, 1, output_fifo, 1)
 
 # Get the results from the output queue
 output, user_obj = output_fifo.read_elem()
