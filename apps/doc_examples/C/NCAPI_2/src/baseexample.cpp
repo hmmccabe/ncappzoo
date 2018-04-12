@@ -245,13 +245,35 @@ int main() {
 
     // Clean up
     retCode = ncFifoDestroy(inputFIFO);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not destroy the input FIFO.\n", retCode);
+        exit(-1);
+    }
     inputFIFO = NULL;
     retCode = ncFifoDestroy(outputFIFO);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not destroy the output FIFO.\n", retCode);
+        exit(-1);
+    }
     outputFIFO = NULL;
     retCode = ncGraphDestroy(graphHandle);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not destroy the graph handle.\n", retCode);
+        exit(-1);
+    }
     graphHandle = NULL;
     retCode = ncDeviceClose(deviceHandle);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not close the device.\n", retCode);
+        exit(-1);
+    }
     retCode = ncDeviceDestroy(deviceHandle);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not destroy the device handle.\n", retCode);
+        exit(-1);
+    }
     deviceHandle = NULL;
+    
+    return 0;
 
 }
