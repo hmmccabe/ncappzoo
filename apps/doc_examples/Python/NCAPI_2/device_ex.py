@@ -24,6 +24,7 @@ device.graph_allocate(graph, graph_buffer)
 # Use the device...
 #
 
-# Deallocate the graph and close the device
+# Deallocate and destroy the graph handle, close the device, and destroy the device handle
 graph.destroy()
 device.close()
+device.destroy()
