@@ -1,21 +1,29 @@
-"""NCAPI v2"""
 from mvnc import mvncapi
 
-# Initialize and open a device
-device_list = mvncapi.enumerate_devices()
-device = mvncapi.Device(device_list[0])
+# Get a list of valid device handles
+device_handles = mvncapi.enumerate_devices()
+
+# Create a Device object for the first device found
+device = mvncapi.Device(device_handles[0])
+
+# Initialize the device
 device.open()
 
-# Read a graph from file at some GRAPH_FILEPATH and initialize the Graph
-GRAPH_FILEPATH = 'graph'
-with open(GRAPH_FILEPATH, mode='rb') as f:
-    graph_buffer = f.read()
-graph = mvncapi.Graph('my graph')
+# Initialize a graph container
+graph = Graph('graph1')
 
-# Allocate the graph to the device
+# Read a compiled network graph from file (set the graph_filepath correctly for your graph file)
+graph_filepath = './graph'
+with open(graph_filepath, 'rb') as f:
+    graph_buffer = f.read()
+
+# Allocate the network graph on the device
 device.graph_allocate(graph, graph_buffer)
 
-# Clean up
+#
+# Use the device...
+#
+
+# Deallocate the graph and close the device
 graph.destroy()
 device.close()
-device.destroy()
