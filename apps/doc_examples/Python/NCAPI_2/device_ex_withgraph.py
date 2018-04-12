@@ -12,10 +12,22 @@ print(device.get_option(mvncapi.DeviceOption.RO_DEVICE_NAME))
 # Open communication with the device
 device.open()
 
+# Create a Graph
+graph = Graph('graph1')
+
+# Read a compiled network graph from file (set the graph_filepath correctly for your graph file)
+graph_filepath = './graph'
+with open(graph_filepath, 'rb') as f:
+    graph_buffer = f.read()
+
+# Allocate the graph on the device
+device.graph_allocate(graph, graph_buffer)
+
 #
 # Use the device...
 #
 
-# Close the device and destroy the device handle
+# Deallocate and destroy the graph handle, close the device, and destroy the device handle
+graph.destroy()
 device.close()
 device.destroy()
