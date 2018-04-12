@@ -8,12 +8,9 @@ int main(void) {
     char* fifoName; 
     unsigned int dataLength;
     
-    /* Initialize a fifo handle */
+    /* Initialize a FIFO handle */
     retCode = ncFifoCreate("inputFifo", NC_FIFO_HOST_WO, &fifoHandle);
-    
-    /* retCode should be NC_OK unless there was a problem */
-    if(retCode != NC_OK)
-    {
+    if(retCode != NC_OK) {
         printf("Error: %d\n", retCode);
         exit(-1);
     }
@@ -24,8 +21,7 @@ int main(void) {
     retCode = ncFifoGetOption(fifoHandle, NC_RO_FIFO_NAME, fifoName, &dataLength);
 
     /* retCode should be NC_INVALID_DATA_LENGTH unless there was another problem */
-    if(retCode != NC_INVALID_DATA_LENGTH)
-    {
+    if(retCode != NC_INVALID_DATA_LENGTH) {
         printf("Error: %d\n", retCode);
         exit(-1);
     }
@@ -34,11 +30,25 @@ int main(void) {
     /* Allocate the array buffer */
     fifoName = (char*)malloc(dataLength);
     
-    /* Get the fifo name option value */
+    /* Get the FIFO name option value */
     retCode = ncFifoGetOption(fifoHandle, NC_RO_FIFO_NAME, fifoName, &dataLength);
     
-    /* Use the fifo name as needed */
-    printf("The fifo name is %s.\n", fifoName);
+    /* This time retCode should be NC_OK unless there was a problem */
+    if(retCode != NC_OK) {
+        printf("Error: %d\n", retCode);
+        exit(-1);
+    }
+    
+    /* Use the FIFO name as needed */
+    printf("The FIFO name is %s.\n", fifoName);
+    
+    /* When you are done, free the FIFO handle and set the pointer to NULL */
+    retCode = ncFifoDestroy(fifoHandle);
+    if(retCode != NC_OK) {
+        printf("Error: %d\n", retCode);
+        exit(-1);
+    }
+    fifoHandle = NULL;
     
     return 0;
 }

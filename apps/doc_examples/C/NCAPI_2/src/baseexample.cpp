@@ -10,8 +10,8 @@
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "../include/stb_image_resize.h"
 
-// Network config
-#define GRAPH_FILEPATH "graph"
+#define IMAGE_FILEPATH "../misc/cat.jpg"
+#define GRAPH_FILEPATH "../misc/graph"
 const int networkDim = 224;
 float networkMean[] = {0.40787054*255.0, 0.45752458*255.0, 0.48109378*255.0};
 
@@ -88,86 +88,148 @@ float* loadImageFromFile(const char *path, int reqsize, float *mean) {
 }
 
 int main() {
-    // You can check that this return code is equal to NC_OK after each API function call
-    // This is omitted in this example for better readability
+    // Check that this return code is equal to NC_OK after each API function call
     ncStatus_t retCode;
 
-    // Initialize and open a device
+    // Create a device handle
     struct ncDeviceHandle_t* deviceHandle;
     retCode = ncDeviceCreate(0, &deviceHandle);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not create device.\n", retCode);
+        exit(-1);
+    }
+    
+    // Open communication with the device
     retCode = ncDeviceOpen(deviceHandle);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not open device.\n", retCode);
+        exit(-1);
+    }
 
     // Load a graph from file at some GRAPH_FILEPATH
     unsigned int graphBufferLength;
     void* graphBuffer = loadGraphFromFile(GRAPH_FILEPATH, &graphBufferLength);
 
-    // Initialize and allocate the graph to the device
+    // Create a graph handle
     struct ncGraphHandle_t* graphHandle;
     retCode = ncGraphCreate("my graph", &graphHandle);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not create graph.\n", retCode);
+        exit(-1);
+    }
+    
+    // Allocate the graph to the device
     retCode = ncGraphAllocate(deviceHandle, graphHandle, graphBuffer, graphBufferLength);
     free(graphBuffer);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not allocate graph.\n", retCode);
+        exit(-1);
+    }
     
-    // Get the graph TensorDescriptor structs (they describe expected graph input/output)
-    struct ncTensorDescriptor_t* inputDescriptor;
-    struct ncTensorDescriptor_t* outputDescriptor;
-    unsigned int length1 = 0;
-    unsigned int length2 = 0;
+    // Get the graph input tensor descriptor
+    struct ncTensorDescriptor_t* inputDescriptor = NULL;
+    unsigned int inDescLen = 0;
+    // Get the correct size first
+    retCode = ncGraphGetOption(graphHandle, NC_RO_GRAPH_INPUT_TENSOR_DESCRIPTORS, inputDescriptor, &inDescLen);
+    if (retCode == NC_INVALID_DATA_LENGTH) {
+        // Get the input tensor descriptor data
+        inputDescriptor = (ncTensorDescriptor_t*)malloc(inDescLen);
+        retCode = ncGraphGetOption(graphHandle, NC_RO_GRAPH_INPUT_TENSOR_DESCRIPTORS, inputDescriptor, &inDescLen);
+        if (retCode != NC_OK) {
+            printf("ERROR [%d]: Could not get input tensor descriptor.\n", retCode);
+            exit(-1);
+        }
+    } else {
+        printf("ERROR [%d]: Could not get input tensor descriptor length.\n", retCode);
+        exit(-1);
+    }
     
-    if (graphHandle == NULL) {
-        printf("graphHandle\n");
+    
+    // Get the graph output tensor decsriptor
+    struct ncTensorDescriptor_t* outputDescriptor = NULL;
+    unsigned int outDescLen = 0;
+    // Get the correct size first 
+    retCode = ncGraphGetOption(graphHandle, NC_RO_GRAPH_OUTPUT_TENSOR_DESCRIPTORS, outputDescriptor, &outDescLen);
+    if (retCode == NC_INVALID_DATA_LENGTH) {
+        // Get the output tensor descriptor data
+        outputDescriptor = (ncTensorDescriptor_t*)malloc(outDescLen);
+        retCode = ncGraphGetOption(graphHandle, NC_RO_GRAPH_OUTPUT_TENSOR_DESCRIPTORS, outputDescriptor, &outDescLen);
+        if (retCode != NC_OK) {
+            printf("ERROR [%d]: Could not get output tensor descriptor.\n", retCode);
+            exit(-1);
+        }
+    } else {
+        printf("ERROR [%d]: Could not get output tensor descriptor length.\n", retCode);
+        exit(-1);
     }
-    if (inputDescriptor == NULL) {
-        printf("inputDescriptor\n");
-    }
-    if (NC_RO_GRAPH_INPUT_TENSOR_DESCRIPTORS == NULL || NC_RO_GRAPH_OUTPUT_TENSOR_DESCRIPTORS == NULL) {
-        printf("descriptor\n");
-    }
-    if (&length1 == NULL || &length2 == NULL) {
-        printf("length %d %d\n", length1, length2);
-    }
-    ncGraphGetOption(graphHandle, NC_RO_GRAPH_INPUT_TENSOR_DESCRIPTORS, inputDescriptor, &length1);
-    ncGraphGetOption(graphHandle, NC_RO_GRAPH_OUTPUT_TENSOR_DESCRIPTORS, outputDescriptor, &length2);
-    inputDescriptor = (ncTensorDescriptor_t*)malloc(length1);
-    outputDescriptor = (ncTensorDescriptor_t*)malloc(length2);
-    ncGraphGetOption(graphHandle, NC_RO_GRAPH_INPUT_TENSOR_DESCRIPTORS, inputDescriptor, &length1);
-    ncGraphGetOption(graphHandle, NC_RO_GRAPH_OUTPUT_TENSOR_DESCRIPTORS, outputDescriptor, &length2);
     
     // Create input/output FIFOs
     struct ncFifoHandle_t* inputFIFO;
     struct ncFifoHandle_t* outputFIFO;
-    int datatype = NC_FIFO_FP32;
     retCode = ncFifoCreate("", NC_FIFO_HOST_WO, &inputFIFO);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not create input FIFO.\n", retCode);
+        exit(-1);
+    }
     retCode = ncFifoCreate("", NC_FIFO_HOST_RO, &outputFIFO);
-    retCode = ncFifoSetOption(inputFIFO, NC_RW_FIFO_DATA_TYPE, &datatype, sizeof(datatype)); // optional, if needed
-    retCode = ncFifoSetOption(outputFIFO, NC_RW_FIFO_DATA_TYPE, &datatype, sizeof(datatype)); // optional, if needed
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not create output FIFOe.\n", retCode);
+        exit(-1);
+    }
+    
+    // Allocate the FIFOs to the device
     retCode = ncFifoAllocate(inputFIFO, deviceHandle, inputDescriptor, 2);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not allocate input FIFO.\n", retCode);
+        exit(-1);
+    }
     retCode = ncFifoAllocate(outputFIFO, deviceHandle, outputDescriptor, 2);
+        if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not allocate output FIFO.\n", retCode);
+        exit(-1);
+    }
 
     // Read and preprocess input
-    float* imageBuffer = loadImageFromFile("cat.jpg", networkDim, networkMean);
+    float* imageBuffer = loadImageFromFile(IMAGE_FILEPATH, networkDim, networkMean);
     unsigned int imageBufferLength = 3 * networkDim * networkDim * sizeof(*imageBuffer);
 
     // Write the image to the input FIFO
     retCode = ncFifoWriteElem(inputFIFO, imageBuffer, inputDescriptor, 0);
     free(imageBuffer);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not write tensor to input FIFO.\n", retCode);
+        exit(-1);
+    }
     
     // Queue the inference
-    retCode = ncGraphQueueInference(graphHandle, &inputFIFO, &outputFIFO);
+    retCode = ncGraphQueueInference(graphHandle, &inputFIFO, 1, &outputFIFO, 1);
+    if (retCode != NC_OK) {
+        printf("ERROR [%d]: Could not queue the inference.\n", retCode);
+        exit(-1);
+    }
 
     // Get the results from the output FIFO
-    void* result;
-    void* userParam;
-    struct ncTensorDescriptor_t resultDescriptor;
-    retCode = ncFifoReadElem(outputFIFO, &result, &resultDescriptor, &userParam);
-
-    int graphState;
-    unsigned int statusLength = sizeof(graphState);
-    retCode = ncGraphGetOption(graphHandle, NC_RO_GRAPH_STATE, &graphState, &statusLength);
-    printf("Graph state: %d\n", graphState);
+    void* result = NULL;
+    unsigned int resultLen = 0;
+    void* userParam; 
+    // Get the correct result size
+    retCode = ncFifoReadElem(outputFIFO, &result, &resultLen, &userParam);
+    if (retCode == NC_INVALID_DATA_LENGTH) {
+        // Get the result value
+        result = malloc(resultLen);
+        retCode = ncFifoReadElem(outputFIFO, &result, &resultLen, &userParam);
+        if (retCode != NC_OK) {
+            printf("ERROR [%d]: Could not get output tensor descriptor.\n", retCode);
+            exit(-1);
+        }
+    } else {
+        printf("ERROR [%d]: Could not get output tensor descriptor length.\n", retCode);
+        exit(-1);
+    }
 
     // Do something with the results...
     int dataTypeSize = outputDescriptor->totalSize/( outputDescriptor->w* outputDescriptor->h*outputDescriptor->c*outputDescriptor->n);
-    unsigned int numResults = resultDescriptor.totalSize / dataTypeSize;
+    unsigned int numResults = 1;
     printf("resultData length is %d \n", numResults);
     float *fresult = (float*) result;
     float maxResult = 0.0;

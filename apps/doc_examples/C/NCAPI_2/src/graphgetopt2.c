@@ -10,10 +10,7 @@ int main(void) {
     
     /* Initialize a graph handle */
     retCode = ncGraphCreate("graph1", &graphHandle);
-    
-    /* retCode should be NC_OK unless there was a problem */
-    if(retCode != NC_OK)
-    {
+    if(retCode != NC_OK) {
         printf("Error: %d\n", retCode);
         exit(-1);
     }
@@ -24,8 +21,7 @@ int main(void) {
     retCode = ncGraphGetOption(graphHandle, NC_RO_GRAPH_NAME, graphName, &dataLength);
 
     /* retCode should be NC_INVALID_DATA_LENGTH unless there was another problem */
-    if(retCode != NC_INVALID_DATA_LENGTH)
-    {
+    if(retCode != NC_INVALID_DATA_LENGTH) {
         printf("Error: %d\n", retCode);
         exit(-1);
     }
@@ -37,8 +33,22 @@ int main(void) {
     /* Get the graph name option value */
     retCode = ncGraphGetOption(graphHandle, NC_RO_GRAPH_NAME, graphName, &dataLength);
     
+    /* This time retCode should be NC_OK unless there was a problem */
+    if(retCode != NC_OK) {
+        printf("Error: %d\n", retCode);
+        exit(-1);
+    }
+    
     /* Use the graph name as needed */
     printf("The graph name is %s.\n", graphName);
+    
+    /* When you are done, free the graph handle and set the pointer to NULL */
+    retCode = ncGraphDestroy(graphHandle);    
+    if(retCode != NC_OK)  {
+        printf("Error: %d\n", retCode);
+        exit(-1);
+    }
+    graphHandle = NULL;
     
     return 0;
 }

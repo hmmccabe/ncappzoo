@@ -14,8 +14,7 @@ int main(void)
     retCode = ncGlobalGetOption(NC_RO_API_VERSION, apiVersion, &dataLength);
 
     /* retCode should be NC_INVALID_DATA_LENGTH unless there was another problem */
-    if(retCode != NC_INVALID_DATA_LENGTH)
-    {
+    if(retCode != NC_INVALID_DATA_LENGTH) {
         printf("Error: %d\n", retCode);
         exit(-1);
     }
@@ -27,9 +26,8 @@ int main(void)
     /* Call the function again to get the API version option value */
     retCode = ncGlobalGetOption(NC_RO_API_VERSION, apiVersion, &dataLength);
     
-    /* Now retCode should be NC_OK unless there was another problem */
-    if(retCode != NC_OK)
-    {
+    /* This time retCode should be NC_OK unless there was another problem */
+    if(retCode != NC_OK) {
         printf("Error: %d\n", retCode);
         exit(-1);
     }

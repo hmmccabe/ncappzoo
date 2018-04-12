@@ -10,8 +10,6 @@ int main(void) {
 
     /* Initialize a graph handle */
     retCode = ncGraphCreate("", &graphHandle);
-    
-    /* retCode should be NC_OK unless there was a problem */
     if(retCode != NC_OK)
     {
         printf("Error: %d\n", retCode);
@@ -22,8 +20,22 @@ int main(void) {
     dataLength = sizeof(graphState);
     retCode = ncGraphGetOption(graphHandle, NC_RO_GRAPH_STATE, &graphState, &dataLength);
     
+    /* retCode should be NC_OK unless there was a problem */
+    if(retCode != NC_OK) {
+        printf("Error: %d\n", retCode);
+        exit(-1);
+    }
+    
     /* Use the graph state as needed */
     printf("The graph state is %d.\n", graphState);
+    
+    /* When you are done, free the graph handle and set the pointer to NULL */
+    retCode = ncGraphDestroy(graphHandle);    
+    if(retCode != NC_OK)  {
+        printf("Error: %d\n", retCode);
+        exit(-1);
+    }
+    graphHandle = NULL;
     
     return 0;
 }
